@@ -11,6 +11,13 @@ workflows:
       - name: Build shared Kotlin framework
         script: |
           cd $CM_BUILD_DIR
+          chmod +x ./gradlew
+          ./gradlew :shared:embedAndSignAppleFrameworkForXcode \
+            -Pkotlin.native.cocoapods.platform=iphonesimulator \
+            -Pkotlin.native.cocoapods.archs=arm64
+      - name: Build shared Kotlin framework
+        script: |
+          cd $CM_BUILD_DIR
           ./gradlew :shared:embedAndSignAppleFrameworkForXcode \
             -Pkotlin.native.cocoapods.platform=iphonesimulator \
             -Pkotlin.native.cocoapods.archs=arm64
