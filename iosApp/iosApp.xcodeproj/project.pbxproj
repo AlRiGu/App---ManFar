@@ -47,7 +47,7 @@
 				A100000629B7F12300000003 /* Assets.xcassets */,
 				A100000729B7F12300000004 /* Info.plist */,
 			);
-			path = iosApp;
+			name = iosApp;
 			sourceTree = "<group>";
 		};
 		A100001229B7F12300000009 /* Products */ = {
@@ -282,7 +282,7 @@
 					"$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
 				);
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = iosApp/Info.plist;
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "ManFar Barbershop";
 				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -321,7 +321,7 @@
 					"$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
 				);
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = iosApp/Info.plist;
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "ManFar Barbershop";
 				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
