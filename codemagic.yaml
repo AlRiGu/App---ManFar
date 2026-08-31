@@ -1,0 +1,26 @@
+workflows:
+  ios-workflow:
+    name: ManFar iOS Build
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      xcode: latest
+      groups:
+        - ios_signing  # lo creas luego en Codemagic si quieres firmar
+    scripts:
+      - name: Build shared Kotlin framework
+        script: |
+          cd $CM_BUILD_DIR
+          ./gradlew :shared:embedAndSignAppleFrameworkForXcode \
+            -Pkotlin.native.cocoapods.platform=iphonesimulator \
+            -Pkotlin.native.cocoapods.archs=arm64
+      - name: Build iOS app (unsigned, simulator)
+        script: |
+          cd $CM_BUILD_DIR/iosApp
+          xcodebuild -project iosApp.xcodeproj \
+            -scheme iosApp \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            build
+    artifacts:
+      - build/**/*.app
