@@ -1,0 +1,6 @@
+{
+  "name": "ManFar Barbershop",
+  "description": "Sistema de Gestión y Reservas para ManFar Barbershop con panel de Clientes y Administración.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
