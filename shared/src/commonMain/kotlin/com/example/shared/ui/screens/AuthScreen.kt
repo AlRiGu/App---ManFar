@@ -55,6 +55,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material3.CircularProgressIndicator
 import com.example.shared.ui.theme.DarkBorder
 import com.example.shared.ui.theme.DarkBorderGold
 import com.example.shared.ui.theme.DarkObsidian
@@ -71,6 +72,10 @@ import com.example.shared.ui.theme.TextWhite
 fun AuthScreen(
     onLoginSuccess: () -> Unit,
     onQuickRoleSelect: (role: String, email: String, name: String) -> Unit,
+    onEmailPasswordAuth: ((email: String, password: String, isRegister: Boolean, name: String) -> Unit)? = null,
+    onGoogleSignInClick: (() -> Unit)? = null,
+    externalErrorMessage: String? = null,
+    isLoading: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     var isRegisterMode by remember { mutableStateOf(false) }
@@ -78,7 +83,7 @@ fun AuthScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var localErrorMessage by remember { mutableStateOf<String?>(null) }
 
     Box(
         modifier = modifier
@@ -216,7 +221,8 @@ fun AuthScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    errorMessage?.let { err ->
+                    val displayError = externalErrorMessage ?: localErrorMessage
+                    displayError?.let { err ->
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = err,
@@ -230,36 +236,60 @@ fun AuthScreen(
 
                     Button(
                         onClick = {
-                            if (email.isBlank()) {
-                                errorMessage = "Por favor ingresa un correo válido."
+                            localErrorMessage = null
+                            if (email.isBlank() || !email.contains("@")) {
+                                localErrorMessage = "Por favor ingresa un correo válido."
+                                return@Button
+                            }
+                            if (password.length < 6) {
+                                localErrorMessage = "La contraseña debe tener al menos 6 caracteres."
                                 return@Button
                             }
                             val userName = if (name.isNotBlank()) name else email.substringBefore("@")
-                            onQuickRoleSelect("CLIENT", email, userName)
-                            onLoginSuccess()
+                            if (onEmailPasswordAuth != null) {
+                                onEmailPasswordAuth(email.trim(), password, isRegisterMode, userName)
+                            } else {
+                                onQuickRoleSelect("CLIENT", email, userName)
+                                onLoginSuccess()
+                            }
                         },
+                        enabled = !isLoading,
                         colors = ButtonDefaults.buttonColors(containerColor = GoldLight),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp)
                     ) {
-                        Text(
-                            text = if (isRegisterMode) "Registrarse" else "Ingresar",
-                            color = DarkObsidian,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = DarkObsidian,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(
+                                text = if (isRegisterMode) "Registrarse con Firebase" else "Ingresar",
+                                color = DarkObsidian,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Google Login Button (Demo)
+                    // Google Login Button
                     OutlinedButton(
                         onClick = {
-                            onQuickRoleSelect("CLIENT", "usuario.google@gmail.com", "Cliente Google")
-                            onLoginSuccess()
+                            localErrorMessage = null
+                            if (onGoogleSignInClick != null) {
+                                onGoogleSignInClick()
+                            } else {
+                                onQuickRoleSelect("CLIENT", "usuario.google@gmail.com", "Cliente Google")
+                                onLoginSuccess()
+                            }
                         },
+                        enabled = !isLoading,
                         shape = RoundedCornerShape(12.dp),
                         border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder),
                         modifier = Modifier
@@ -276,7 +306,12 @@ fun AuthScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    TextButton(onClick = { isRegisterMode = !isRegisterMode }) {
+                    TextButton(
+                        onClick = {
+                            isRegisterMode = !isRegisterMode
+                            localErrorMessage = null
+                        }
+                    ) {
                         Text(
                             text = if (isRegisterMode) "¿Ya tienes cuenta? Inicia Sesión" else "¿No tienes cuenta? Regístrate aquí",
                             color = GoldPrimary,

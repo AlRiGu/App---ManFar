@@ -74,14 +74,14 @@ import com.example.shared.util.generateBookingDays
 fun BookingFlowScreen(
     services: List<ServiceModel>,
     selectedService: ServiceModel?,
-    selectedBarber: Barber,
+    selectedBarber: Barber = AvailableBarbers.first(),
     selectedDate: String,
     selectedTime: String?,
     notes: String,
     availableSlots: List<TimeSlotItem>,
     user: ClientUserModel,
     onSelectService: (ServiceModel) -> Unit,
-    onSelectBarber: (Barber) -> Unit,
+    onSelectBarber: ((Barber) -> Unit)? = null,
     onSelectDate: (String) -> Unit,
     onSelectTime: (String) -> Unit,
     onNotesChange: (String) -> Unit,
@@ -134,11 +134,10 @@ fun BookingFlowScreen(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Paso $currentStep de 4: ${
+                    text = "Paso $currentStep de 3: ${
                         when (currentStep) {
                             1 -> "Seleccionar Servicio"
-                            2 -> "Elegir Barbero"
-                            3 -> "Fecha y Horario"
+                            2 -> "Fecha y Horario"
                             else -> "Confirmar Reserva"
                         }
                     }",
@@ -148,14 +147,14 @@ fun BookingFlowScreen(
             }
         }
 
-        // Progress Line
+        // Progress Line (3 Steps)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            for (step in 1..4) {
+            for (step in 1..3) {
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -206,148 +205,7 @@ fun BookingFlowScreen(
                 }
 
                 2 -> {
-                    // STEP 2: Choose Barber
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(20.dp)
-                    ) {
-                        Text(
-                            text = "Selecciona tu Barbero Preferido",
-                            color = TextWhite,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Nuestros profesionales con mayor experiencia",
-                            color = TextSilver,
-                            fontSize = 12.sp
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        AvailableBarbers.forEach { barber ->
-                            val isSelected = selectedBarber.id == barber.id
-                            val barberColor = Color(barber.badgeColorHex)
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 12.dp)
-                                    .clickable {
-                                        onSelectBarber(barber)
-                                    },
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (isSelected) DarkSurfaceElevated else DarkSurface
-                                ),
-                                shape = RoundedCornerShape(16.dp),
-                                border = androidx.compose.foundation.BorderStroke(
-                                    1.5.dp,
-                                    if (isSelected) GoldLight else DarkBorder
-                                )
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(50.dp)
-                                            .clip(CircleShape)
-                                            .background(barberColor.copy(alpha = 0.2f))
-                                            .border(1.dp, barberColor, CircleShape),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Person,
-                                            contentDescription = null,
-                                            tint = barberColor,
-                                            modifier = Modifier.size(28.dp)
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.width(14.dp))
-
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = barber.name,
-                                            color = TextWhite,
-                                            fontSize = 15.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Text(
-                                            text = barber.title,
-                                            color = GoldPrimary,
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = barber.specialty,
-                                            color = TextSilver,
-                                            fontSize = 11.sp
-                                        )
-                                    }
-
-                                    Column(horizontalAlignment = Alignment.End) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(
-                                                imageVector = Icons.Default.Star,
-                                                contentDescription = null,
-                                                tint = GoldAmberGlow,
-                                                modifier = Modifier.size(14.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(2.dp))
-                                            Text(
-                                                text = "${barber.rating}",
-                                                color = GoldAmberGlow,
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        }
-
-                                        Spacer(modifier = Modifier.height(6.dp))
-
-                                        if (isSelected) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(22.dp)
-                                                    .clip(CircleShape)
-                                                    .background(GoldLight),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Check,
-                                                    contentDescription = null,
-                                                    tint = DarkObsidian,
-                                                    modifier = Modifier.size(14.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Button(
-                            onClick = { currentStep = 3 },
-                            colors = ButtonDefaults.buttonColors(containerColor = GoldLight),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp)
-                        ) {
-                            Text("Continuar a Fecha y Hora", color = DarkObsidian, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-
-                3 -> {
-                    // STEP 3: Date & Time Picker
+                    // STEP 2: Date & Time Picker
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -413,8 +271,8 @@ fun BookingFlowScreen(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Espacios libres de 45 minutos",
-                            color = TextSilver,
+                            text = "Atendido por Manuel • Espacios de 45 min",
+                            color = GoldPrimary,
                             fontSize = 12.sp
                         )
 
@@ -481,7 +339,7 @@ fun BookingFlowScreen(
                         Spacer(modifier = Modifier.height(28.dp))
 
                         Button(
-                            onClick = { currentStep = 4 },
+                            onClick = { currentStep = 3 },
                             enabled = selectedTime != null,
                             colors = ButtonDefaults.buttonColors(containerColor = GoldLight),
                             shape = RoundedCornerShape(12.dp),
@@ -494,8 +352,8 @@ fun BookingFlowScreen(
                     }
                 }
 
-                4 -> {
-                    // STEP 4: Confirmation & Notes
+                3 -> {
+                    // STEP 3: Confirmation & Notes
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -535,7 +393,7 @@ fun BookingFlowScreen(
 
                                 Spacer(modifier = Modifier.height(10.dp))
 
-                                // Barber
+                                // Barber (Manuel)
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween

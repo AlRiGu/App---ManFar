@@ -19,30 +19,12 @@ data class Barber(
 val AvailableBarbers = listOf(
     Barber(
         id = 1,
-        name = "Mateo Silva",
-        title = "Master Barber & Fundador",
-        specialty = "Cortes Clásicos & Diseño VIP",
-        rating = 4.9,
-        reviewsCount = 184,
+        name = "Manuel",
+        title = "Master Barber & Estilista ManFar",
+        specialty = "Cortes Clásicos, Degradados VIP & Diseño de Barba",
+        rating = 5.0,
+        reviewsCount = 240,
         badgeColor = GoldLight
-    ),
-    Barber(
-        id = 2,
-        name = "Carlos 'Fade' Gómez",
-        title = "Especialista en Degradados",
-        specialty = "Skin Fade, Low/Mid/High Fades & Texturizado",
-        rating = 4.8,
-        reviewsCount = 142,
-        badgeColor = GoldAmberGlow
-    ),
-    Barber(
-        id = 3,
-        name = "Diego Rossi",
-        title = "Maestro Barbero & Barba",
-        specialty = "Ritual de Toalla Caliente & Afeitado Navaja",
-        rating = 4.9,
-        reviewsCount = 165,
-        badgeColor = GoldDark
     )
 )
 

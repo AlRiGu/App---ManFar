@@ -75,7 +75,7 @@ fun ClientProfileScreen(
     var isEditing by remember { mutableStateOf(false) }
     var pushNotificationsEnabled by remember { mutableStateOf(true) }
 
-    val barbersList = listOf("Mateo Silva", "Carlos 'Fade'", "Diego Rossi")
+    val barbersList = listOf("Manuel")
 
     Column(
         modifier = modifier

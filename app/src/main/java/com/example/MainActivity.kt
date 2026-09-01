@@ -66,7 +66,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.data.local.AppDatabase
 import com.example.data.mapper.toApp
 import com.example.data.mapper.toEntity
 import com.example.data.mapper.toModel
@@ -106,9 +105,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ManFarBarbershopTheme {
-                val context = LocalContext.current
-                val database = remember { AppDatabase.getDatabase(context) }
-                val repository = remember { BarbershopRepository(database.barbershopDao()) }
+                val repository = remember { BarbershopRepository() }
 
                 val viewModel: BarbershopViewModel = viewModel(
                     factory = object : ViewModelProvider.Factory {
@@ -127,11 +124,14 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun ManFarAppRoot(viewModel: BarbershopViewModel) {
+    val context = LocalContext.current
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
     val currentRole by viewModel.currentRole.collectAsState()
     val currentUser by viewModel.currentUser.collectAsState()
     val currentTab by viewModel.currentTab.collectAsState()
     val toastNotification by viewModel.activeNotificationToast.collectAsState()
+    val authLoading by viewModel.authLoading.collectAsState()
+    val authError by viewModel.authError.collectAsState()
 
     val allServices by viewModel.allServices.collectAsState()
     val activeServices by viewModel.activeServices.collectAsState()
@@ -166,7 +166,15 @@ fun ManFarAppRoot(viewModel: BarbershopViewModel) {
                 onLoginSuccess = { /* ViewModel already handles login state */ },
                 onQuickRoleSelect = { role, email, name ->
                     viewModel.loginQuick(role, email, name)
-                }
+                },
+                onEmailPasswordAuth = { email, password, isRegister, name ->
+                    viewModel.authenticateWithEmailPassword(email, password, isRegister, name)
+                },
+                onGoogleSignInClick = {
+                    viewModel.authenticateWithGoogle(context)
+                },
+                externalErrorMessage = authError,
+                isLoading = authLoading
             )
         } else {
             Scaffold(
@@ -399,7 +407,7 @@ fun ManFarBottomNavigation(
         tonalElevation = 8.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .height(68.dp)
+            .height(76.dp)
             .border(1.dp, DarkBorder, RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
             .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
     ) {
@@ -487,14 +495,15 @@ fun androidx.compose.foundation.layout.RowScope.BottomNavItem(
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(22.dp)
             )
         },
         label = {
             Text(
                 text = label,
-                fontSize = 10.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                fontSize = 11.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                modifier = Modifier.padding(top = 2.dp)
             )
         },
         colors = NavigationBarItemDefaults.colors(
@@ -504,6 +513,8 @@ fun androidx.compose.foundation.layout.RowScope.BottomNavItem(
             unselectedIconColor = TextSilver,
             unselectedTextColor = TextMuted
         ),
-        modifier = Modifier.testTag(testTag)
+        modifier = Modifier
+            .testTag(testTag)
+            .padding(vertical = 4.dp)
     )
 }

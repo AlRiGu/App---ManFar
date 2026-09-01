@@ -136,7 +136,7 @@ fun SharedApp() {
                         clientName = "Alejandro Barber",
                         clientEmail = "cliente@manfar.com",
                         clientPhone = "+34 612 345 678",
-                        barberName = "Mateo Silva",
+                        barberName = "Manuel",
                         serviceId = 2,
                         serviceName = "Degradado Skin Fade VIP",
                         servicePrice = 22.0,
@@ -150,7 +150,7 @@ fun SharedApp() {
                         clientName = "Alejandro Barber",
                         clientEmail = "cliente@manfar.com",
                         clientPhone = "+34 612 345 678",
-                        barberName = "Diego Rossi",
+                        barberName = "Manuel",
                         serviceId = 3,
                         serviceName = "Ritual Barba & Toalla Caliente",
                         servicePrice = 16.0,
@@ -213,48 +213,51 @@ fun SharedApp() {
                         tonalElevation = 8.dp,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(68.dp)
+                            .height(76.dp)
                     ) {
                         NavigationBarItem(
                             selected = activeTab == "CLIENT_HOME",
                             onClick = { activeTab = "CLIENT_HOME" },
-                            icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
-                            label = { Text("Inicio", fontSize = 11.sp) },
+                            icon = { Icon(Icons.Default.Home, contentDescription = "Inicio", modifier = Modifier.size(22.dp)) },
+                            label = { Text("Inicio", fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp)) },
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = DarkObsidian,
                                 selectedTextColor = GoldLight,
                                 indicatorColor = GoldLight,
                                 unselectedIconColor = TextSilver,
                                 unselectedTextColor = TextMuted
-                            )
+                            ),
+                            modifier = Modifier.padding(vertical = 4.dp)
                         )
 
                         NavigationBarItem(
                             selected = activeTab == "CLIENT_APPOINTMENTS",
                             onClick = { activeTab = "CLIENT_APPOINTMENTS" },
-                            icon = { Icon(Icons.Default.CalendarMonth, contentDescription = "Citas") },
-                            label = { Text("Mis Citas", fontSize = 11.sp) },
+                            icon = { Icon(Icons.Default.CalendarMonth, contentDescription = "Citas", modifier = Modifier.size(22.dp)) },
+                            label = { Text("Mis Citas", fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp)) },
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = DarkObsidian,
                                 selectedTextColor = GoldLight,
                                 indicatorColor = GoldLight,
                                 unselectedIconColor = TextSilver,
                                 unselectedTextColor = TextMuted
-                            )
+                            ),
+                            modifier = Modifier.padding(vertical = 4.dp)
                         )
 
                         NavigationBarItem(
                             selected = activeTab == "CLIENT_PROFILE",
                             onClick = { activeTab = "CLIENT_PROFILE" },
-                            icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
-                            label = { Text("Perfil", fontSize = 11.sp) },
+                            icon = { Icon(Icons.Default.Person, contentDescription = "Perfil", modifier = Modifier.size(22.dp)) },
+                            label = { Text("Perfil", fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp)) },
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = DarkObsidian,
                                 selectedTextColor = GoldLight,
                                 indicatorColor = GoldLight,
                                 unselectedIconColor = TextSilver,
                                 unselectedTextColor = TextMuted
-                            )
+                            ),
+                            modifier = Modifier.padding(vertical = 4.dp)
                         )
                     }
                 },

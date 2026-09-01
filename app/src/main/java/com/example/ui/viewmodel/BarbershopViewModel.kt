@@ -1,9 +1,11 @@
 package com.example.ui.viewmodel
 
+import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.data.auth.FirebaseAuthService
 import com.example.data.local.entity.AppointmentEntity
 import com.example.data.local.entity.AvailabilityBlockEntity
 import com.example.data.local.entity.ClientUserEntity
@@ -28,7 +30,8 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 class BarbershopViewModel(
-    private val repository: BarbershopRepository
+    private val repository: BarbershopRepository,
+    private val authService: FirebaseAuthService = FirebaseAuthService()
 ) : ViewModel() {
 
     // Auth & Navigation State
@@ -41,6 +44,12 @@ class BarbershopViewModel(
     private val _currentTab = MutableStateFlow("CLIENT_HOME")
     val currentTab: StateFlow<String> = _currentTab.asStateFlow()
 
+    private val _authLoading = MutableStateFlow(false)
+    val authLoading: StateFlow<Boolean> = _authLoading.asStateFlow()
+
+    private val _authError = MutableStateFlow<String?>(null)
+    val authError: StateFlow<String?> = _authError.asStateFlow()
+
     private val _currentUser = MutableStateFlow(
         ClientUserEntity(
             id = 1,
@@ -48,7 +57,7 @@ class BarbershopViewModel(
             email = "carlos.mendoza@gmail.com",
             phone = "+34 612 345 678",
             role = "CLIENT",
-            preferredBarber = "Mateo Silva (Master Barber)",
+            preferredBarber = "Manuel",
             avatarInitials = "CM"
         )
     )
@@ -265,9 +274,100 @@ class BarbershopViewModel(
                 email = "carlos.mendoza@gmail.com",
                 phone = "+34 612 345 678",
                 role = "CLIENT",
-                preferredBarber = "Mateo Silva (Master Barber)",
+                preferredBarber = "Manuel",
                 avatarInitials = "CM"
             )
+        }
+    }
+
+    fun authenticateWithEmailPassword(
+        email: String,
+        password: String,
+        isRegister: Boolean,
+        name: String,
+        onSuccess: () -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            _authLoading.value = true
+            _authError.value = null
+            val result = if (isRegister) {
+                authService.signUpWithEmail(name, email, password)
+            } else {
+                authService.signInWithEmail(email, password)
+            }
+
+            _authLoading.value = false
+            result.onSuccess { user ->
+                val userEmail = user.email ?: email
+                val displayName = user.displayName ?: if (name.isNotBlank()) name else userEmail.substringBefore("@")
+                val isAdmin = userEmail.contains("admin", ignoreCase = true) || userEmail.equals("admin@manfarbarbershop.com", ignoreCase = true)
+                val role = if (isAdmin) "ADMIN" else "CLIENT"
+
+                val clientUser = ClientUserEntity(
+                    id = System.currentTimeMillis(),
+                    name = displayName,
+                    email = userEmail,
+                    phone = user.phoneNumber ?: "",
+                    role = role,
+                    preferredBarber = if (role == "ADMIN") "Todos" else "Manuel",
+                    avatarInitials = displayName.take(2).uppercase()
+                )
+
+                // Sync with Firestore repository
+                repository.insertUser(clientUser)
+
+                _currentUser.value = clientUser
+                _currentRole.value = role
+                _isLoggedIn.value = true
+                _currentTab.value = if (role == "ADMIN") "ADMIN_DASHBOARD" else "CLIENT_HOME"
+
+                val msg = if (isRegister) "¡Cuenta creada en Firebase!" else "¡Bienvenido de vuelta a ManFar!"
+                showToast("Autenticación Exitosa ✂️", msg)
+                onSuccess()
+            }.onFailure { err ->
+                _authError.value = err.localizedMessage ?: "Error de autenticación con Firebase"
+            }
+        }
+    }
+
+    fun authenticateWithGoogle(
+        context: Context,
+        onSuccess: () -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            _authLoading.value = true
+            _authError.value = null
+            val result = authService.signInWithGoogleCredential(context)
+            _authLoading.value = false
+
+            result.onSuccess { user ->
+                val userEmail = user.email ?: "usuario.google@gmail.com"
+                val displayName = user.displayName ?: "Cliente Google"
+                val isAdmin = userEmail.contains("admin", ignoreCase = true)
+                val role = if (isAdmin) "ADMIN" else "CLIENT"
+
+                val clientUser = ClientUserEntity(
+                    id = System.currentTimeMillis(),
+                    name = displayName,
+                    email = userEmail,
+                    phone = user.phoneNumber ?: "",
+                    role = role,
+                    preferredBarber = "Manuel",
+                    avatarInitials = displayName.take(2).uppercase()
+                )
+
+                repository.insertUser(clientUser)
+
+                _currentUser.value = clientUser
+                _currentRole.value = role
+                _isLoggedIn.value = true
+                _currentTab.value = if (role == "ADMIN") "ADMIN_DASHBOARD" else "CLIENT_HOME"
+
+                showToast("Google Sign-In Exitoso 🌐", "Bienvenido, $displayName")
+                onSuccess()
+            }.onFailure { err ->
+                _authError.value = err.localizedMessage ?: "Error al autenticar con Google"
+            }
         }
     }
 
@@ -293,13 +393,14 @@ class BarbershopViewModel(
                 email = email.ifBlank { "carlos.mendoza@gmail.com" },
                 phone = "+34 612 345 678",
                 role = "CLIENT",
-                preferredBarber = "Mateo Silva (Master Barber)",
+                preferredBarber = "Manuel",
                 avatarInitials = "CM"
             )
         }
     }
 
     fun logout() {
+        authService.signOut()
         _isLoggedIn.value = false
         _currentTab.value = "CLIENT_HOME"
     }
