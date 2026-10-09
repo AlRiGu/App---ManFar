@@ -1,0 +1,43 @@
+
+name: ManFar iOS Simulator
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    name: Build iOS Simulator
+    runs-on: macos-latest
+
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Preparar Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Compilar para el simulador
+        run: |
+          xcodebuild \
+            -project iosApp/iosApp.xcodeproj \
+            -scheme iosApp \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Guardar aplicación compilada
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ManFar-iOS-Simulator
+          path: build/Build/Products/Debug-iphonesimulator/*.app
+          if-no-files-found: error
+          retention-days: 3
