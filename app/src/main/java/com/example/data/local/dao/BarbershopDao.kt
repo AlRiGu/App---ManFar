@@ -91,7 +91,7 @@ interface BarbershopDao {
     @Query("SELECT * FROM users WHERE role = 'CLIENT' ORDER BY name ASC")
     fun getAllClients(): Flow<List<ClientUserEntity>>
 
-    @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
+    @Query("SELECT * FROM users WHERE LOWER(TRIM(email)) = LOWER(TRIM(:email)) LIMIT 1")
     suspend fun getUserByEmail(email: String): ClientUserEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

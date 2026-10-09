@@ -70,6 +70,7 @@ import com.example.data.mapper.toApp
 import com.example.data.mapper.toEntity
 import com.example.data.mapper.toModel
 import com.example.data.mapper.toShared
+import com.example.data.local.AppDatabase
 import com.example.data.repository.BarbershopRepository
 import com.example.ui.components.NotificationsCenterDialog
 import com.example.ui.components.ToastNotificationBanner
@@ -105,7 +106,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ManFarBarbershopTheme {
-                val repository = remember { BarbershopRepository() }
+                val context = LocalContext.current
+                val database = remember { AppDatabase.getDatabase(context) }
+                val repository = remember { BarbershopRepository(dao = database.barbershopDao()) }
 
                 val viewModel: BarbershopViewModel = viewModel(
                     factory = object : ViewModelProvider.Factory {

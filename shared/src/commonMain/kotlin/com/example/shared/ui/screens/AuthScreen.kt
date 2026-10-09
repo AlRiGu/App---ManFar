@@ -249,8 +249,9 @@ fun AuthScreen(
                             if (onEmailPasswordAuth != null) {
                                 onEmailPasswordAuth(email.trim(), password, isRegisterMode, userName)
                             } else {
-                                onQuickRoleSelect("CLIENT", email, userName)
-                                onLoginSuccess()
+                                val role = if (email.contains("admin", ignoreCase = true) ||
+                                    email.equals("admin@manfarbarbershop.com", ignoreCase = true)) "ADMIN" else "CLIENT"
+                                onQuickRoleSelect(role, email.trim(), userName)
                             }
                         },
                         enabled = !isLoading,
@@ -356,7 +357,6 @@ fun AuthScreen(
                         Button(
                             onClick = {
                                 onQuickRoleSelect("CLIENT", "carlos.mendoza@gmail.com", "Carlos Mendoza")
-                                onLoginSuccess()
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = DarkSurface),
                             shape = RoundedCornerShape(10.dp),
@@ -373,7 +373,6 @@ fun AuthScreen(
                         Button(
                             onClick = {
                                 onQuickRoleSelect("ADMIN", "admin@manfarbarbershop.com", "Admin ManFar")
-                                onLoginSuccess()
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = DarkSurface),
                             shape = RoundedCornerShape(10.dp),

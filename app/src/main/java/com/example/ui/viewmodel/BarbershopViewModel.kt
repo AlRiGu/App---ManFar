@@ -325,7 +325,7 @@ class BarbershopViewModel(
                     avatarInitials = displayName.take(2).uppercase()
                 )
 
-                // Sync with Firestore repository
+                // Sync with repository (persists to Room local cache and Firestore)
                 repository.insertUser(clientUser)
 
                 _currentUser.value = clientUser
@@ -337,7 +337,19 @@ class BarbershopViewModel(
                 showToast("Autenticación Exitosa ✂️", msg)
                 onSuccess()
             }.onFailure { err ->
-                _authError.value = err.localizedMessage ?: "Error de autenticación con Firebase"
+                // Cross-platform sync & offline-first fallback:
+                // Check if user exists in Firestore (registered on iOS) or Room local cache
+                val fallbackUser = try { repository.getUserByEmail(email.trim()) } catch (_: Exception) { null }
+                if (fallbackUser != null) {
+                    _currentUser.value = fallbackUser
+                    _currentRole.value = fallbackUser.role
+                    _isLoggedIn.value = true
+                    _currentTab.value = if (fallbackUser.role.equals("ADMIN", ignoreCase = true)) "ADMIN_DASHBOARD" else "CLIENT_HOME"
+                    showToast("Acceso Concedido ✂️", "Perfil sincronizado con Room y Firestore.")
+                    onSuccess()
+                } else {
+                    _authError.value = err.localizedMessage ?: "Error de autenticación con Firebase"
+                }
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.example.data.repository
 
+import com.example.data.local.dao.BarbershopDao
 import com.example.data.local.entity.AppointmentEntity
 import com.example.data.local.entity.AvailabilityBlockEntity
 import com.example.data.local.entity.ClientUserEntity
@@ -27,7 +28,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 class BarbershopRepository(
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val dao: BarbershopDao? = null
 ) : IBarbershopRepository {
 
     private val servicesCollection = firestore.collection("services")
@@ -54,6 +56,11 @@ class BarbershopRepository(
             if (snapshot != null) {
                 val list = snapshot.documents.mapNotNull { docToServiceModel(it) }
                     .sortedBy { it.id }
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        dao?.insertServices(list.map { it.toEntity() })
+                    } catch (_: Exception) {}
+                }
                 trySend(list)
             }
         }
@@ -277,6 +284,11 @@ class BarbershopRepository(
             if (snapshot != null) {
                 val list = snapshot.documents.mapNotNull { docToClientUserModel(it) }
                     .sortedBy { it.name }
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        dao?.insertUsers(list.map { it.toEntity() })
+                    } catch (_: Exception) {}
+                }
                 trySend(list)
             }
         }
@@ -288,22 +300,84 @@ class BarbershopRepository(
     }
 
     suspend fun getUserByEmail(email: String): ClientUserEntity? {
-        val docId = emailToDocId(email)
-        val snapshot = clientsCollection.document(docId).get().await()
-        return if (snapshot.exists()) {
-            docToClientUserModel(snapshot)?.toEntity()
-        } else {
-            null
+        val trimmedEmail = email.trim()
+        val normalizedEmail = trimmedEmail.lowercase()
+        val docId = emailToDocId(normalizedEmail)
+
+        // 1. First, check Firestore across collections & queries for cross-device sync (e.g. registered on iOS)
+        var remoteUser: ClientUserModel? = null
+        try {
+            // A. Check clients collection with normalized docId
+            val snapshot = clientsCollection.document(docId).get().await()
+            if (snapshot.exists()) {
+                remoteUser = docToClientUserModel(snapshot)
+            }
+
+            // B. If not found by docId, query by email field in clients collection
+            if (remoteUser == null) {
+                val querySnap = clientsCollection.whereEqualTo("email", normalizedEmail).limit(1).get().await()
+                if (!querySnap.isEmpty) {
+                    remoteUser = docToClientUserModel(querySnap.documents.first())
+                }
+            }
+            if (remoteUser == null) {
+                val querySnapExact = clientsCollection.whereEqualTo("email", trimmedEmail).limit(1).get().await()
+                if (!querySnapExact.isEmpty) {
+                    remoteUser = docToClientUserModel(querySnapExact.documents.first())
+                }
+            }
+
+            // C. Also check 'users' collection in Firestore
+            if (remoteUser == null) {
+                val userDoc = firestore.collection("users").document(docId).get().await()
+                if (userDoc.exists()) {
+                    remoteUser = docToClientUserModel(userDoc)
+                } else {
+                    val usersQuery = firestore.collection("users").whereEqualTo("email", normalizedEmail).limit(1).get().await()
+                    if (!usersQuery.isEmpty) {
+                        remoteUser = docToClientUserModel(usersQuery.documents.first())
+                    }
+                }
+            }
+        } catch (_: Exception) {
+            // Firestore error or offline - fallback to Room cache
         }
+
+        // If found in Firestore, download into Room local database immediately!
+        if (remoteUser != null) {
+            val entity = remoteUser.toEntity()
+            try {
+                dao?.insertUser(entity)
+            } catch (_: Exception) {}
+            return entity
+        }
+
+        // 2. Offline-first fallback: query Room local SQLite cache
+        try {
+            val localUser = dao?.getUserByEmail(normalizedEmail) ?: dao?.getUserByEmail(trimmedEmail)
+            if (localUser != null) {
+                return localUser
+            }
+        } catch (_: Exception) {}
+
+        return null
     }
 
     override suspend fun insertUser(user: ClientUserModel): Long {
         val id = if (user.id > 0) user.id else System.currentTimeMillis()
         val docId = emailToDocId(user.email)
+        val entity = user.copy(id = id).toEntity()
+
+        // Cache in Room first (offline-first)
+        try {
+            dao?.insertUser(entity)
+        } catch (_: Exception) {}
+
+        // Sync with Firestore
         val data = mapOf(
             "id" to id,
             "name" to user.name,
-            "email" to user.email,
+            "email" to user.email.trim().lowercase(),
             "phone" to user.phone,
             "role" to user.role,
             "preferredBarber" to user.preferredBarber,
@@ -311,7 +385,9 @@ class BarbershopRepository(
             "notes" to user.notes,
             "createdAt" to (if (user.createdAt > 0) user.createdAt else System.currentTimeMillis())
         )
-        clientsCollection.document(docId).set(data, SetOptions.merge()).await()
+        try {
+            clientsCollection.document(docId).set(data, SetOptions.merge()).await()
+        } catch (_: Exception) {}
         return id
     }
 
@@ -448,15 +524,18 @@ class BarbershopRepository(
     }
 
     private fun docToClientUserModel(doc: DocumentSnapshot): ClientUserModel? {
-        val name = doc.getString("name") ?: return null
-        val id = doc.getLong("id") ?: doc.id.toLongOrNull() ?: 0L
-        val email = doc.getString("email") ?: doc.id
-        val phone = doc.getString("phone") ?: ""
-        val role = doc.getString("role") ?: "CLIENT"
-        val preferredBarber = doc.getString("preferredBarber") ?: "Cualquiera"
+        val email = doc.getString("email") ?: doc.getString("mail") ?: doc.id
+        val name = doc.getString("name")
+            ?: doc.getString("displayName")
+            ?: doc.getString("fullName")
+            ?: email.substringBefore("@")
+        val id = doc.getLong("id") ?: doc.id.toLongOrNull() ?: System.currentTimeMillis()
+        val phone = doc.getString("phone") ?: doc.getString("phoneNumber") ?: ""
+        val role = doc.getString("role") ?: if (email.contains("admin", ignoreCase = true)) "ADMIN" else "CLIENT"
+        val preferredBarber = doc.getString("preferredBarber") ?: "Manuel"
         val avatarInitials = doc.getString("avatarInitials") ?: getInitials(name)
         val notes = doc.getString("notes") ?: ""
-        val createdAt = doc.getLong("createdAt") ?: 0L
+        val createdAt = doc.getLong("createdAt") ?: System.currentTimeMillis()
 
         return ClientUserModel(
             id = id,

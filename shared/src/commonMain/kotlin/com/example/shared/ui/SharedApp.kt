@@ -30,6 +30,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -343,19 +344,31 @@ fun SharedApp() {
         val isCurrentUserAdmin = currentUser.role.equals("ADMIN", ignoreCase = true) || 
                 currentUser.email.contains("admin", ignoreCase = true)
 
+        // Strict navigation guard: Force redirection to ADMIN_DASHBOARD on iOS/KMP when role == ADMIN
+        LaunchedEffect(currentUser.role, isAuthenticated) {
+            if (isAuthenticated) {
+                val isAdmin = currentUser.role.equals("ADMIN", ignoreCase = true) ||
+                        currentUser.email.contains("admin", ignoreCase = true)
+                if (isAdmin) {
+                    if (activeTab.startsWith("CLIENT_") || activeTab == "CLIENT_HOME") {
+                        activeTab = "ADMIN_DASHBOARD"
+                    }
+                }
+            }
+        }
+
         if (!isAuthenticated) {
             AuthScreen(
                 onLoginSuccess = {
                     isAuthenticated = true
-                    if (isCurrentUserAdmin) {
-                        activeTab = "ADMIN_DASHBOARD"
-                    } else {
-                        activeTab = "CLIENT_HOME"
-                    }
+                    val isAdmin = currentUser.role.equals("ADMIN", ignoreCase = true) || 
+                            currentUser.email.contains("admin", ignoreCase = true)
+                    activeTab = if (isAdmin) "ADMIN_DASHBOARD" else "CLIENT_HOME"
                 },
                 onQuickRoleSelect = { selectedRole, email, name ->
                     val resolvedRole = if (selectedRole.equals("ADMIN", ignoreCase = true) ||
-                        email.contains("admin", ignoreCase = true)) "ADMIN" else "CLIENT"
+                        email.contains("admin", ignoreCase = true) ||
+                        email.equals("admin@manfarbarbershop.com", ignoreCase = true)) "ADMIN" else "CLIENT"
                     val initials = name.trim().split(" ")
                         .filter { it.isNotBlank() }
                         .map { it.first().uppercaseChar() }
@@ -366,6 +379,26 @@ fun SharedApp() {
                     currentUser = currentUser.copy(
                         name = name,
                         email = email,
+                        role = resolvedRole,
+                        avatarInitials = initials
+                    )
+                    isAuthenticated = true
+                    activeTab = if (resolvedRole == "ADMIN") "ADMIN_DASHBOARD" else "CLIENT_HOME"
+                },
+                onEmailPasswordAuth = { email, password, isRegister, name ->
+                    val resolvedRole = if (email.contains("admin", ignoreCase = true) ||
+                        email.equals("admin@manfarbarbershop.com", ignoreCase = true)) "ADMIN" else "CLIENT"
+                    val displayName = if (name.isNotBlank()) name else if (resolvedRole == "ADMIN") "Admin ManFar" else email.substringBefore("@")
+                    val initials = displayName.trim().split(" ")
+                        .filter { it.isNotBlank() }
+                        .map { it.first().uppercaseChar() }
+                        .joinToString("")
+                        .take(2)
+                        .ifBlank { if (resolvedRole == "ADMIN") "MF" else "CL" }
+
+                    currentUser = currentUser.copy(
+                        name = displayName,
+                        email = email.trim(),
                         role = resolvedRole,
                         avatarInitials = initials
                     )

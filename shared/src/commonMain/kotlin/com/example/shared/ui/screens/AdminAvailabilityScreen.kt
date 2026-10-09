@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.shared.currentTimeMillis
 import com.example.shared.model.AvailabilityBlockModel
 import com.example.shared.ui.theme.DarkBorder
 import com.example.shared.ui.theme.DarkBorderGold
@@ -368,7 +369,7 @@ fun AddAvailabilityBlockDialog(
                 onClick = {
                     onAdd(
                         AvailabilityBlockModel(
-                            id = System.currentTimeMillis(),
+                            id = currentTimeMillis(),
                             blockType = if (isFullDay) "FULL_DAY" else "TIME_RANGE",
                             date = dateStr,
                             startTime = if (isFullDay) "" else startTime,
