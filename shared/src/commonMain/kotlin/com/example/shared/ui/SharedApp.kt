@@ -169,7 +169,7 @@ fun SharedApp() {
                     NotificationModel(
                         id = 1,
                         title = "¡Bienvenido a ManFar!",
-                        message = "Reserva tu próximo turno con los mejores barberos.",
+                        message = "Reserva tu próximo turno y disfruta de una atención exclusiva con Manuel.",
                         timestamp = 1756641600000L,
                         isRead = false
                     ),

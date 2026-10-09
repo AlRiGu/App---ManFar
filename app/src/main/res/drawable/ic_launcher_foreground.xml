@@ -1,36 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <!-- Golden Scissors and Shears Emblem -->
-    <!-- Left Blade -->
-    <path
-        android:fillColor="#F59E0B"
-        android:pathData="M36,28 L54,52 L51,55 L33,31 Z" />
-    <!-- Right Blade -->
-    <path
-        android:fillColor="#FBBF24"
-        android:pathData="M72,28 L54,52 L57,55 L75,31 Z" />
-    <!-- Left handle loop -->
-    <path
-        android:fillColor="#D97706"
-        android:pathData="M38,72 C32,72 28,68 28,62 C28,56 32,52 38,52 C44,52 48,56 48,62 C48,68 44,72 38,72 Z M38,58 C35.8,58 34,59.8 34,62 C34,64.2 35.8,66 38,66 C40.2,66 42,64.2 42,62 C42,59.8 40.2,58 38,58 Z" />
-    <!-- Right handle loop -->
-    <path
-        android:fillColor="#D97706"
-        android:pathData="M70,72 C64,72 60,68 60,62 C60,56 64,52 70,52 C76,52 80,56 80,62 C80,68 76,72 70,72 Z M70,58 C67.8,58 66,59.8 66,62 C66,64.2 67.8,66 70,66 C72.2,66 74,64.2 74,62 C74,59.8 72.2,58 70,58 Z" />
-    <!-- Center Pivot Gem -->
-    <path
-        android:fillColor="#FDE68A"
-        android:pathData="M54,50 A4,4 0 1,1 53.99,50" />
-    <!-- Barber comb icon bar at bottom -->
-    <path
-        android:fillColor="#F59E0B"
-        android:pathData="M32,78 L76,78 L76,82 L32,82 Z" />
-    <path
-        android:fillColor="#FBBF24"
-        android:pathData="M35,82 L37,82 L37,88 L35,88 Z M41,82 L43,82 L43,88 L41,88 Z M47,82 L49,82 L49,88 L47,88 Z M53,82 L55,82 L55,88 L53,88 Z M59,82 L61,82 L61,88 L59,88 Z M65,82 L67,82 L67,88 L65,88 Z M71,82 L73,82 L73,88 L71,88 Z" />
-</vector>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:width="72dp"
+        android:height="72dp"
+        android:drawable="@drawable/ic_manfar_logo"
+        android:gravity="center" />
+</layer-list>
+
