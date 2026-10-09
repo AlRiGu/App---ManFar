@@ -298,12 +298,24 @@ class BarbershopViewModel(
 
             _authLoading.value = false
             result.onSuccess { user ->
-                val userEmail = user.email ?: email
-                val displayName = user.displayName ?: if (name.isNotBlank()) name else userEmail.substringBefore("@")
-                val isAdmin = userEmail.contains("admin", ignoreCase = true) || userEmail.equals("admin@manfarbarbershop.com", ignoreCase = true)
-                val role = if (isAdmin) "ADMIN" else "CLIENT"
+                val userEmail = user.email ?: email.trim()
+                val existingFirestoreUser = try {
+                    repository.getUserByEmail(userEmail)
+                } catch (_: Exception) {
+                    null
+                }
 
-                val clientUser = ClientUserEntity(
+                val displayName = existingFirestoreUser?.name?.takeIf { it.isNotBlank() }
+                    ?: user.displayName?.takeIf { it.isNotBlank() }
+                    ?: if (name.isNotBlank()) name else userEmail.substringBefore("@")
+                val isExplicitAdmin = userEmail.contains("admin", ignoreCase = true) || 
+                        userEmail.equals("admin@manfarbarbershop.com", ignoreCase = true)
+                val role = existingFirestoreUser?.role ?: if (isExplicitAdmin) "ADMIN" else "CLIENT"
+
+                val clientUser = existingFirestoreUser?.copy(
+                    name = displayName,
+                    phone = if (existingFirestoreUser.phone.isNotBlank()) existingFirestoreUser.phone else (user.phoneNumber ?: "")
+                ) ?: ClientUserEntity(
                     id = System.currentTimeMillis(),
                     name = displayName,
                     email = userEmail,
@@ -317,9 +329,9 @@ class BarbershopViewModel(
                 repository.insertUser(clientUser)
 
                 _currentUser.value = clientUser
-                _currentRole.value = role
+                _currentRole.value = clientUser.role
                 _isLoggedIn.value = true
-                _currentTab.value = if (role == "ADMIN") "ADMIN_DASHBOARD" else "CLIENT_HOME"
+                _currentTab.value = if (clientUser.role.equals("ADMIN", ignoreCase = true)) "ADMIN_DASHBOARD" else "CLIENT_HOME"
 
                 val msg = if (isRegister) "¡Cuenta creada en Firebase!" else "¡Bienvenido de vuelta a ManFar!"
                 showToast("Autenticación Exitosa ✂️", msg)
@@ -342,26 +354,38 @@ class BarbershopViewModel(
 
             result.onSuccess { user ->
                 val userEmail = user.email ?: "usuario.google@gmail.com"
-                val displayName = user.displayName ?: "Cliente Google"
-                val isAdmin = userEmail.contains("admin", ignoreCase = true)
-                val role = if (isAdmin) "ADMIN" else "CLIENT"
+                val existingFirestoreUser = try {
+                    repository.getUserByEmail(userEmail)
+                } catch (_: Exception) {
+                    null
+                }
 
-                val clientUser = ClientUserEntity(
+                val displayName = existingFirestoreUser?.name?.takeIf { it.isNotBlank() }
+                    ?: user.displayName?.takeIf { it.isNotBlank() }
+                    ?: "Cliente Google"
+                val isExplicitAdmin = userEmail.contains("admin", ignoreCase = true) || 
+                        userEmail.equals("admin@manfarbarbershop.com", ignoreCase = true)
+                val role = existingFirestoreUser?.role ?: if (isExplicitAdmin) "ADMIN" else "CLIENT"
+
+                val clientUser = existingFirestoreUser?.copy(
+                    name = displayName,
+                    phone = if (existingFirestoreUser.phone.isNotBlank()) existingFirestoreUser.phone else (user.phoneNumber ?: "")
+                ) ?: ClientUserEntity(
                     id = System.currentTimeMillis(),
                     name = displayName,
                     email = userEmail,
                     phone = user.phoneNumber ?: "",
                     role = role,
-                    preferredBarber = "Manuel",
+                    preferredBarber = if (role == "ADMIN") "Todos" else "Manuel",
                     avatarInitials = displayName.take(2).uppercase()
                 )
 
                 repository.insertUser(clientUser)
 
                 _currentUser.value = clientUser
-                _currentRole.value = role
+                _currentRole.value = clientUser.role
                 _isLoggedIn.value = true
-                _currentTab.value = if (role == "ADMIN") "ADMIN_DASHBOARD" else "CLIENT_HOME"
+                _currentTab.value = if (clientUser.role.equals("ADMIN", ignoreCase = true)) "ADMIN_DASHBOARD" else "CLIENT_HOME"
 
                 showToast("Google Sign-In Exitoso 🌐", "Bienvenido, $displayName")
                 onSuccess()
